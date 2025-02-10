@@ -1,0 +1,85 @@
+<h2>{{title}}</h2>
+<form id="addProductForm" class="d-flex gap-2">
+    <input type="text" name="title" id="title" placeholder="Título" class="input-group-text">
+    <input type="text" name="description" id="description" placeholder="Descripción" class="input-group-text">
+    <input type="text" name="code" id="code" placeholder="Código" class="input-group-text">
+    <input type="text" name="price" id="price" placeholder="Precio" class="input-group-text">
+    <input type="text" name="status" id="status" placeholder="Estado" class="input-group-text">
+    <input type="text" name="stock" id="stock" placeholder="Stock" class="input-group-text">
+    <input type="text" name="category" id="category" placeholder="Categoría" class="input-group-text">
+    <button class="btn btn-primary">Agregar</button>
+</form>
+<div id="productsContainer" class="container d-flex flex-row gap-2 m-2">
+</div>
+<script type="module">
+    import { io } from "https://cdn.socket.io/4.8.1/socket.io.esm.min.js";
+
+    const addProductForm = document.getElementById("addProductForm");
+    const socket = io();
+
+    socket.on("send-products", (prods) => {
+        const productsContainer = document.getElementById("productsContainer");
+        productsContainer.innerHTML = "";
+        prods.forEach((prod) => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.style = "width: 18rem;";
+
+            const imgContainer = document.createElement("div");
+            imgContainer.style = "width: 10vw; height: 10vw";
+
+            const img = document.createElement("img");
+            img.src = prod.thumbnails[0];
+            img.className = "card-img-top object-fit-contain rounded";
+            img.alt = `Imagen ${prod.thumbnails[0]}`;
+
+            imgContainer.appendChild(img);
+
+            const cardBody = document.createElement("div");
+            cardBody.className = "card-body";
+
+            const cardTitle = document.createElement("h5");
+            cardTitle.className = "card-title";
+            cardTitle.innerText = prod.title;
+
+            const cardPrice = document.createElement("p");
+            cardPrice.className = "card-text";
+            cardPrice.innerText = `$${prod.price}`;
+
+            const cardDescription = document.createElement("p");
+            cardDescription.className = "card-text";
+            cardDescription.innerText = prod.description;
+
+            const cardButton = document.createElement("a");
+            cardButton.href = "#";
+            cardButton.className = "btn btn-primary";
+            cardButton.innerText = "Agregar al carrito";
+
+            cardBody.appendChild(cardTitle);
+            cardBody.appendChild(cardPrice);
+            cardBody.appendChild(cardDescription);
+            cardBody.appendChild(cardButton);
+
+            card.appendChild(imgContainer);
+            card.appendChild(cardBody);
+
+            productsContainer.appendChild(card);
+        });
+    })
+
+    addProductForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const payload = {
+            title: document.getElementById("title").value,
+            description: document.getElementById("description").value,
+            code: document.getElementById("code").value,
+            price: document.getElementById("price").value,
+            status: document.getElementById("status").value,
+            stock: document.getElementById("stock").value,
+            category: document.getElementById("category").value,
+            thumbnails: ["https://picsum.photos/50/50"]
+        }
+        socket.emit("add-product", payload);
+        document.getElementById("addProductForm").reset();
+    });
+</script>

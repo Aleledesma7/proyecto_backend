@@ -1,0 +1,16 @@
+<h2>{{title}}</h2>
+<div class="container d-flex flex-row gap-2">
+    {{#each products}}
+    <div class="card" style="width: 18rem;">
+        <div style="width: 10vw; height: 10vw">
+            <img src="{{this.thumbnails.[0]}}" class="card-img-top object-fit-contain rounded" alt="Imagen {{this.thumbnails.[0]}}">
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">{{this.title}}</h5>
+            <p class="card-text">${{this.price}}</p>
+            <p class="card-text">{{this.description}}</p>
+            <a href="#" class="btn btn-primary">Agregar al carrito</a>
+        </div>
+    </div>
+    {{/each}}
+</div>
