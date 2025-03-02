@@ -1,115 +1,58 @@
 import express from "express"
-import fs from 'fs'
-import path, { dirname } from 'path'
-import { fileURLToPath } from 'url'
+import ProductService from "../services/products.service.js";
+import { createResponseAndPagination } from "../config/createResponseAndPagination.js";
 
-const router = express.Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const router = express.Router()
+const productsService = new ProductService()
 
-router.get("/", (req, res) => {
-    // ruta del archivo products.json (nuestra base de datos)
-    const productsPath = path.join(__dirname, "..", 'data/products.json')
+router.get("/", async (req, res) => {
+    const { page = 1, limit = 10, query, sort } = req.query;
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const response = await productsService.getProducts();
+    const baseUrl = `${req.protocol}://${req.get("host")}${req.baseUrl}`;
+    const payload = response.payload
 
-    // verifico si el archivo existe
-    if (fs.existsSync(productsPath)) {
-        const products = fs.readFileSync(productsPath) // lee el archivo de products.json
-        res.send({ status: "ok", payload: JSON.parse(products) })
-        return
-    }
-    res.status(404).send({ status: "not found", message: "Products not found" })
+    if (sort && sort.toLowerCase() === "asc") payload.sort((a, b) => a.price - b.price)
+    if (sort && sort.toLowerCase() === "desc") payload.sort((a, b) => b.price - a.price)
+
+    res.send(createResponseAndPagination(payload, response.status, pageNumber, limitNumber, baseUrl));
 });
 
-router.get("/:pid", (req, res) => {
-    // ruta del archivo products.json (nuestra base de datos)
-    const productsPath = path.join(__dirname, "..", 'data/products.json')
-
-    // verifico si el archivo existe
-    if (fs.existsSync(productsPath)) {
-        const products = fs.readFileSync(productsPath) // lee el archivo de products.json
-        const product = JSON.parse(products).find(product => product.id === req.params.pid)
-        res.send({ status: "ok", payload: product })
+router.get("/:pid", async (req, res) => {
+    const response = await productsService.getProductById(req.params.pid)
+    if (response.status === "error") {
+        res.status(response.statusCode).send(response)
         return
     }
-
-    res.status(404).send({ status: "not found", message: `Product with id: ${req.params.pid} not found` })
+    res.send(response)
 });
 
-router.post("/", (req, res) => {
-    // ruta del archivo products.json (nuestra base de datos)
-    const productsPath = path.join(__dirname, "..", 'data/products.json')
-
-    // verifico si el archivo existe
-    if (fs.existsSync(productsPath)) {
-        const products = fs.readFileSync(productsPath)  // lee el archivo de products.json
-        const productsJSON = JSON.parse(products)
-        const id = crypto.randomUUID()
-        const { code } = req.body
-
-        if (productsJSON.find(product => product.code === code)) {
-            res.status(400).send({ status: "error", message: `Product with code: ${code} already exists` })
-            return
-        }
-
-        productsJSON.push({ id, ...req.body })
-
-        fs.writeFileSync(productsPath, JSON.stringify(productsJSON))
-        res.send({ status: "ok", message: "Product created" })
+router.post("/", async (req, res) => {
+    const response = await productsService.addProduct(req.body)
+    if (response.status === "error") {
+        res.status(response.statusCode).send(response)
         return
     }
-
-    fs.writeFileSync(productsPath, JSON.stringify([req.body]))
-    res.send({ status: "ok", message: "Product created" })
+    res.send(response)
 });
 
-router.put("/:pid", (req, res) => {
-    // ruta del archivo products.json (nuestra base de datos)
-    const productsPath = path.join(__dirname, "..", 'data/products.json')
-
-    // verifico si el archivo existe
-    if (fs.existsSync(productsPath)) {
-        const products = fs.readFileSync(productsPath) // lee el archivo de products.json
-        const productsJSON = JSON.parse(products)
-        const productIndex = productsJSON.findIndex(product => product.id === req.params.pid) // se busca el index
-
-        if (productIndex !== -1) { // si se encuentra el index
-            delete req.body.id
-            
-            productsJSON[productIndex] = { ...productsJSON[productIndex], ...req.body } // agrega el contenido del body dentro del indice buscado
-            fs.writeFileSync(productsPath, JSON.stringify(productsJSON)) // escribo en el archivo
-            res.send({ status: "ok", message: "Product updated" })
-            return
-        }
-
-        res.status(404).send({ status: "not found", message: `Product with id: ${req.params.pid} not found` })
+router.put("/:pid", async (req, res) => {
+    const response = await productsService.updateProduct(req.params.pid, req.body)
+    if (response.status === "error") {
+        res.status(response.statusCode).send(response)
         return
     }
-
-    res.status(404).send({ status: "not found", message: "Products not found" })
+    res.send(response)
 });
 
-router.delete("/:pid", (req, res) => {
-    // ruta del archivo products.json (nuestra base de datos)
-    const productsPath = path.join(__dirname, "..", 'data/products.json')
-
-    // verifico si el archivo existe
-    if (fs.existsSync(productsPath)) {
-        const products = fs.readFileSync(productsPath) // lee el archivo de products.json
-        const productsJSON = JSON.parse(products)
-        const productIndex = productsJSON.findIndex(product => product.id === req.params.pid)
-
-        if (productIndex !== -1) { // si se encuentra
-            productsJSON.splice(productIndex, 1) // se elimina del array
-            fs.writeFileSync(productsPath, JSON.stringify(productsJSON))
-            res.send({ status: "ok", message: "Product deleted" })
-            return
-        }
-
-        res.status(404).send({ status: "not found", message: `Product with id: ${req.params.pid} not found` })
+router.delete("/:pid", async (req, res) => {
+    const response = await productsService.deleteProduct(req.params.pid)
+    if (response.status === "error") {
+        res.status(response.statusCode).send(response)
         return
     }
-
-    res.status(404).send({ status: "not found", message: "Products not found" })
+    res.send(response)
 });
 
 export default router;

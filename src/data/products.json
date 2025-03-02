@@ -1,31 +1,28 @@
 [
     {
-        "id": "c156b0db-db5d-4fa1-99cf-767cd111d6ee",
-        "title": "Yogurt Serenisima",
-        "description": "Leche de vaca",
-        "code": "112",
-        "price": 299.99,
-        "status": true,
-        "stock": 99,
-        "category": "Lacteos",
+        "id": "6b2c30ff-4a10-4be3-b238-1bb2eb9eeb72",
+        "title": "Leche Serenisima",
+        "description": "Leche",
+        "code": "221",
+        "price": "10000",
+        "status": "Nuevo",
+        "stock": "200",
+        "category": "Lacteo",
         "thumbnails": [
-            "https://picsum.photos/200/300",
-            "https://picsum.photos/200/300"
+            "https://picsum.photos/50/50"
         ]
     },
     {
-        "id": "dd4340f6-9b2a-4169-afbb-46baa9bf1acd",
-        "title": "Galletitas Tristeza",
-        "description": "Bagley",
-        "code": "224",
-        "price": 90,
-        "status": true,
-        "stock": 22,
-        "category": "Galletitas",
+        "id": "f47c2c92-4c12-4741-811e-3c99842ca236",
+        "title": "PRoductr",
+        "description": "asdlkajd",
+        "code": "lkjadlkj",
+        "price": "lkjadlkajsd",
+        "status": "lkjasdlkjasd",
+        "stock": "lkjasd",
+        "category": "ad",
         "thumbnails": [
-            "https://picsum.photos/200/300",
-            "https://picsum.photos/200/300",
-            "https://picsum.photos/200/300"
+            "https://picsum.photos/50/50"
         ]
     }
 ]

@@ -1,0 +1,161 @@
+<div class="w-dvw h-dvh grid grid-rows-[10vh_1fr_5vh] bg-white">
+    <section class="bg-base-100 drop-shadow-md flex justify-between items-center px-8 w-full">
+        <h2 class="text-xl font-bold">{{title}}</h2>
+        <div>
+            <button class="btn btn-soft" onclick="cartButton.showModal()">Mi carrito</button>
+            <dialog id="cartButton" class="modal">
+                <div class="modal-box">
+                    <h3 class="text-lg font-bold">Aqui puedes ver el contenido de tu carrito</h3>
+                    <p class="py-4">Press ESC key or click the button below to close</p>
+                    <div class="modal-action">
+                        <form method="dialog">
+                            <!-- if there is a button in form, it will close the modal -->
+                            <button class="btn">Close</button>
+                        </form>
+                    </div>
+                </div>
+            </dialog>
+        </div>
+    </section>
+    <section id="productsContainer"
+        class="bg-base-200 grid grid-cols-4 max-[1600px]:grid-cols-3 max-[1000px]:grid-cols-2 gap-4 overflow-x-auto py-2">
+    </section>
+    <section id="paginationContainer" class="bg-base-100 drop-shadow-md flex  items-center justify-end">
+
+    </section>
+</div>
+<script>
+    const productsContainer = document.getElementById("productsContainer")
+    const paginationContainer = document.getElementById("paginationContainer")
+
+    let page = 1
+    let limit = 12
+    let cartId = ""
+
+    async function getProductsFetch(page = 1, limit = 10, order, query = "") {
+        const params = new URLSearchParams();
+
+        if (page) params.append("page", page);
+        if (limit) params.append("limit", limit);
+        if (order) params.append("order", order);  // Only add if `order` is defined
+        if (query) params.append("query", query);
+
+        const url = `${window.origin}/api/products?${params.toString()}`;
+
+        // Fetch the data
+        const request = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        });
+
+        const response = await request.json();
+        return response;
+    }
+
+    async function getProducts(page = 1, limit = 10, order, query = "") {
+        const response = await getProductsFetch(page, limit, order, query)
+        productsContainer.innerHTML = ""
+
+        response.payload.map(value => {
+            const cardElement = document.createElement('div')
+
+            cardElement.className = "w-full flex justify-center items-center flex-col"
+            cardElement.innerHTML = `
+                <div class="card bg-base-100 w-96 shadow-sm">
+                    <figure>
+                        <img
+                        src="${value.thumbnails[0]}"
+                        alt="Shoes" />
+                    </figure>
+                    <div class="card-body">
+                        <h5 class="card-title">${value.title}</h5>
+                        <p class="text-xl">$${value.price}</p>
+                        <p class="text-sm">${value.description}</p>
+                        <div class="card-actions justify-end">
+                            <button id="addToCart" class="btn btn-base-200" data-product-id="${value._id}">Agregar al carrito</button>
+                        </div>
+                    </div>
+                </div>
+            `
+            productsContainer.appendChild(cardElement)
+        })
+
+        const paginationDiv = document.createElement('div')
+        paginationDiv.className = "flex gap-2 items-center"
+
+        paginationDiv.innerHTML = `
+            <p>Total pag.: ${response.totalPages}</p>
+            <div class="join">
+                <button id="prevPage" class="join-item btn ${!response.hasPrevPage ? "btn-disabled" : ""}">«</button>
+                <button class="join-item btn">Pag. ${response.page}</button>
+                <button id="nextPage" class="join-item btn ${!response.hasNextPage ? "btn-disabled" : ""}">»</button>
+            </div>
+        `
+
+        paginationContainer.innerHTML = ""
+        paginationContainer.appendChild(paginationDiv)
+    }
+
+    getProducts(page, limit)
+
+
+    async function createCart(product) {
+        const request = await fetch(`${window.origin}/api/carts`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(product)
+        })
+
+        return await request.json()
+    }
+    async function updateCart(cartId, productId, product) {
+        const request = await fetch(`${window.origin}/api/carts/${cartId}/product/${productId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(product)
+        })
+
+        return await request.json()
+    }
+
+    productsContainer.addEventListener("click", async (e) => {
+        if (e.target && e.target.tagName === "BUTTON") {
+            const button = e.target;
+            const productId = button.getAttribute("data-product-id");
+            if (cartId === "") {
+                const response = await createCart({
+                    products: [{
+                        product: productId,
+                        quantity: 100
+                    }]
+                })
+
+                cartId = response.payload._id
+            } else {
+                const response = await updateCart(cartId, productId, { quantity: 100 })
+
+                console.log(response)
+            }
+        }
+    })
+
+    paginationContainer.addEventListener("click", (e) => {
+        const target = e.target;
+
+        if (target.id === "prevPage" && !target.classList.contains("btn-disabled")) {
+            page--
+        } else if (target.id === "nextPage" && !target.classList.contains("btn-disabled")) {
+            page++
+        }
+        getProducts(page, limit);
+    });
+</script>

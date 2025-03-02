@@ -1,75 +1,53 @@
 import express from "express"
-import fs from 'fs'
-import path, { dirname } from 'path'
-import { fileURLToPath } from 'url'
+import CartsService from "../services/carts.service.js";
 
-const router = express.Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const router = express.Router()
+const cartsService = new CartsService()
 
-// ruta del archivo products.json (nuestra base de datos)
-const cartsPath = path.join(__dirname, "..", 'data/carts.json')
-
-router.get("/:cid", (req, res) => {
-    // verifico si el archivo existe
-    if (fs.existsSync(cartsPath)) {
-        const carts = fs.readFileSync(cartsPath)
-        const cart = JSON.parse(carts).find(cart => cart.id === req.params.cid)
-        if (!cart) {
-            res.status(404).send({ status: "not found", message: `Product with id: ${req.params.cid} not found` })        
-        }
-        res.send({ status: "ok", payload: cart })
+router.get("/:cid", async (req, res) => {
+    const response = await cartsService.getCartById(req.params.cid)
+    if (response.status === "error") {
+        res.status(response.statusCode).send(response)
         return
     }
-
-    res.status(404).send({ status: "not found", message: `Product with id: ${req.params.cid} not found` })
+    res.send(response)
 });
 
-router.post("/", (req, res) => {
-    // verifico si el archivo existe
-    if (fs.existsSync(cartsPath)) {
-        const carts = fs.readFileSync(cartsPath)
-        const cartsJSON = JSON.parse(carts)
-        const id = crypto.randomUUID()
-
-        cartsJSON.push({ id, ...req.body })
-
-        fs.writeFileSync(cartsPath, JSON.stringify(cartsJSON))
-        res.send({ status: "ok", message: "Cart created" })
+router.post("/", async (req, res) => {
+    const response = await cartsService.addCart(req.body)
+    if (response.status === "error") {
+        res.status(response.statusCode).send(response)
         return
     }
-
-    fs.writeFileSync(cartsPath, JSON.stringify([req.body]))
-    res.send({ status: "ok", message: "Product created" })
+    res.send(response)
 });
 
-router.post("/:cid/product/:pid", (req, res) => {
-    // verifico si el archivo existe
-    if (fs.existsSync(cartsPath)) {
-        const carts = fs.readFileSync(cartsPath)
-        const cartsJSON = JSON.parse(carts)
-
-        const cartIndex = cartsJSON.findIndex(cart => cart.id === req.params.cid)
-
-        if (cartIndex === -1) {
-            res.status(404).send({ status: "not found", message: "The requested cart was not found" })
-        }
-
-        const productIndex = cartsJSON[cartIndex].products.findIndex(product => product.product === req.params.pid)
-
-        if (productIndex === -1) {
-            res.status(404).send({ status: "not found", message: "The requested product on cart was not found" })
-        }
-
-        cartsJSON[cartIndex].products[productIndex] = { product: req.params.pid, ...req.body }
-
-        fs.writeFileSync(cartsPath, JSON.stringify(cartsJSON))
-        res.send({ status: "ok", message: "Cart updated" })
+router.put("/:cid/product/:pid", async (req, res) => {
+    const response = await cartsService.addProductToCart(req.params.cid, req.params.pid, req.body)
+    if (response.status === "error") {
+        res.status(response.statusCode).send(response)
         return
     }
-
-    res.status(404).send({ status: "not found", message: "The requested cart was not found" })
+    res.send(response)
 });
+
+router.delete('/:cid', async (req, res) => {
+    const response = await cartsService.deleteCart(req.params.cid);
+    if (response.status === "error") {
+        res.status(response.statusCode).send(response)
+        return
+    }
+    res.send(response)
+})
+
+router.delete('/:cid/products/:pid', async (req, res) => {
+    const response = await cartsService.deleteProductOnCart(req.params.cid, req.params.pid)
+    if (response.status === "error") {
+        res.status(response.statusCode).send(response)
+        return
+    }
+    res.send(response)
+})
 
 
 export default router;
